@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DGV">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Derrick Game Verifier</title>
+<style>
+:root{
+  --gd:#1B4332;--gm:#2D6A4F;--gp:#d8f3dc;--gl:#74c69d;
+  --gold:#B8860B;--cream:#F5F2EC;--red:#e74c3c;--inkl:#666;--bdr:#ddd;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--cream);min-height:100vh}
+.hdr{background:var(--gd);padding:12px 16px;padding-top:calc(env(safe-area-inset-top,0px) + 12px);display:flex;align-items:center;justify-content:space-between}
+.hdr-title{font-size:18px;font-weight:800;color:var(--gold)}
+.hdr-sub{font-size:10px;color:var(--gl);letter-spacing:.5px;text-transform:uppercase}
+.screen{display:none;padding-bottom:40px}
+.screen.active{display:block}
+.card{background:#fff;border-radius:14px;margin:10px 12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.ctitle{font-size:15px;font-weight:800;color:var(--gd);margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--gp)}
+.btn{border:none;border-radius:11px;padding:12px 14px;font-size:14px;font-weight:700;width:100%;cursor:pointer;margin-top:8px;-webkit-tap-highlight-color:transparent}
+.btn-gold{background:var(--gold);color:#fff}
+.btn-green{background:var(--gm);color:#fff}
+.btn-outline{background:none;color:var(--gd);border:2px solid var(--gd)}
+.btn:disabled{opacity:.4}
+.info{background:var(--gp);border-left:4px solid var(--gm);color:var(--gd);font-size:12px;padding:8px 10px;border-radius:6px;margin-top:8px;line-height:1.5}
+.gt-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}
+.gt-btn{border:2px solid var(--bdr);background:#fff;border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.gt-btn.sel{border-color:var(--gm);background:var(--gp)}
+.bet-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.bet-opt{border:1.5px solid var(--bdr);background:#fff;border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.bet-opt.sel{border-color:var(--gm);background:var(--gp)}
+.photo-drop{border:2.5px dashed var(--bdr);border-radius:12px;padding:24px 16px;text-align:center;cursor:pointer;background:#fafafa;margin-top:12px;-webkit-tap-highlight-color:transparent}
+.photo-drop.has-photo{background:var(--gp);border-color:var(--gm);padding:8px}
+#photo-preview{width:100%;max-height:220px;object-fit:contain;border-radius:8px;display:none}
+.errmsg{color:var(--red);font-size:12px;font-weight:600;margin-top:6px;min-height:16px}
+.player-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;padding:8px 10px;background:#f9f7f3;border-radius:10px}
+.plbl{font-size:10px;font-weight:700;color:var(--inkl);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
+.pinput{border:1.5px solid var(--bdr);border-radius:8px;padding:6px 8px;font-size:13px;font-weight:700;width:100%}
+.hidx{border:1.5px solid var(--bdr);border-radius:8px;padding:6px 6px;font-size:13px;width:58px;text-align:center}
+.score-table{border-collapse:collapse;font-size:11px}
+.score-table th{background:var(--gd);color:var(--gold);padding:5px 4px;text-align:center;font-size:10px;font-weight:700}
+.score-table td{padding:2px 2px;text-align:center;border-bottom:1px solid #f0ebe0}
+.score-table tr.sub td{background:#eceff1;font-weight:700;font-size:11px}
+.score-table tr.tot td{background:#c8e6c9;font-weight:800;font-size:11px}
+.score-input{width:32px;height:27px;border:1.5px solid var(--bdr);border-radius:5px;text-align:center;font-size:12px;font-weight:700;background:#fff}
+.score-input.flagged{border-color:var(--gold);background:#fffde7}
+.score-input.missing{border-color:var(--red);background:#fff5f5}
+.result-hdr{background:var(--gd);color:#fff;padding:12px 14px;margin:-16px -16px 14px;border-radius:14px 14px 0 0}
+.result-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f0ebe0}
+.result-name{font-size:14px;font-weight:700}
+.result-amt{font-size:18px;font-weight:800}
+.result-amt.pos{color:var(--gm)}.result-amt.neg{color:var(--red)}.result-amt.zero{color:var(--inkl)}
+.match-table{border-collapse:collapse;font-size:11px;width:100%}
+.match-table th{background:var(--gp);color:var(--gd);padding:5px 4px;text-align:center;font-size:10px;font-weight:700}
+.match-table td{padding:4px 3px;text-align:center;border-bottom:1px solid #f0ebe0}
+.final-banner{background:linear-gradient(135deg,var(--gd),var(--gm));color:#fff;border-radius:12px;padding:14px 16px;text-align:center;margin:10px 0}
+.overlay{display:none;position:fixed;inset:0;background:rgba(27,67,50,.93);z-index:999;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;padding:32px}
+.overlay.active{display:flex}
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="hdr">
+  <div>
+    <div class="hdr-title">Derrick Game Verifier</div>
+    <div class="hdr-sub">Derrick Golf &amp; Winter Club</div>
+  </div>
+  <span style="font-size:26px">⛳</span>
+</div>
+
+<!-- Loading overlay -->
+<div class="overlay" id="overlay">
+  <div style="font-size:48px;margin-bottom:12px">🔍</div>
+  <div style="font-size:17px;font-weight:700">Reading scorecard…</div>
+  <div style="font-size:12px;opacity:.7;margin-top:6px">Claude is analysing the photo</div>
+</div>
+
+<!-- ── SCREEN: Setup ── -->
+<div class="screen active" id="screen-setup">
+  <div class="card">
+    <div class="ctitle">🔑 API Key</div>
+    <div class="info">Your Anthropic API key — used only in your browser, saved locally, never shared.</div>
+    <input type="password" id="api-key" placeholder="sk-ant-..." style="border:1.5px solid var(--bdr);border-radius:8px;padding:8px 10px;font-size:13px;font-family:monospace;width:100%;margin-top:8px">
+    <div style="font-size:10px;color:var(--inkl);margin-top:4px">Get yours at console.anthropic.com → API Keys</div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">Game Type</div>
+    <div class="gt-grid">
+      <div class="gt-btn sel" id="gt-1v1" onclick="selGameType('1v1')">
+        <div style="font-size:22px;margin-bottom:4px">🏌️</div>
+        <div style="font-size:12px;font-weight:700">1v1</div>
+        <div style="font-size:10px;color:var(--inkl);margin-top:2px">Head to head</div>
+      </div>
+      <div class="gt-btn" id="gt-2v2" onclick="selGameType('2v2')">
+        <div style="font-size:22px;margin-bottom:4px">👥</div>
+        <div style="font-size:12px;font-weight:700">2v2</div>
+        <div style="font-size:10px;color:var(--inkl);margin-top:2px">High-Low Nassau</div>
+      </div>
+      <div class="gt-btn" id="gt-6pt" onclick="selGameType('6pt')">
+        <div style="font-size:22px;margin-bottom:4px">6️⃣</div>
+        <div style="font-size:12px;font-weight:700">6-Point</div>
+        <div style="font-size:10px;color:var(--inkl);margin-top:2px">3 players</div>
+      </div>
+    </div>
+
+    <div class="ctitle">Bet Amount</div>
+    <div id="bet-label" style="font-size:11px;color:var(--inkl);margin-bottom:6px">$ per side (Front 9 / Back 9 / Full 18)</div>
+    <div class="bet-row" id="bet-row"></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+      <span style="font-size:11px;color:var(--inkl);font-weight:700">Custom $</span>
+      <input type="number" id="bet-custom" placeholder="e.g. 5" min="0"
+        style="border:1.5px solid var(--bdr);border-radius:8px;padding:6px 8px;font-size:13px;width:80px">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">📷 Scorecard</div>
+    <div class="info">Lay card on a <b>dark surface</b>. Hold phone directly overhead. Ensure all score columns and player names are in frame. Claude reads only the handwritten numbers in the centre columns.</div>
+    <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhoto(event)">
+    <div class="photo-drop" id="photo-drop" onclick="document.getElementById('photo-input').click()">
+      <div style="font-size:36px;margin-bottom:8px">📸</div>
+      <div style="font-size:13px;font-weight:600;color:var(--inkl)">Tap to photograph or choose from library</div>
+      <img id="photo-preview" alt="scorecard">
+    </div>
+    <div class="errmsg" id="setup-err"></div>
+    <button class="btn btn-gold" id="analyse-btn" onclick="analyseCard()" disabled>🔍 Analyse Scorecard</button>
+    <button class="btn btn-outline" onclick="enterManually()">✏️ Enter Scores Manually</button>
+    <button class="btn btn-green" onclick="loadSample()">🃏 Load Sample — Greg · Bruce · Al · Stu</button>
+    <div style="font-size:10px;color:var(--inkl);text-align:center;margin-top:4px">Pre-fills scores from the example scorecard photo</div>
+  </div>
+</div>
+
+<!-- ── SCREEN: Verify ── -->
+<div class="screen" id="screen-verify">
+  <div class="card">
+    <div class="ctitle">✅ Verify Players &amp; Scores</div>
+    <div class="info" id="verify-info">Check names and handicap indexes below. Tap any score cell to edit it.</div>
+    <div id="player-rows" style="margin-top:12px"></div>
+  </div>
+  <div class="card">
+    <div class="ctitle">📊 Scores</div>
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+      <table class="score-table" id="score-table"></table>
+    </div>
+  </div>
+  <div style="margin:0 12px">
+    <div class="errmsg" id="verify-err"></div>
+    <button class="btn btn-gold" onclick="calculate()">⚡ Calculate Results</button>
+    <button class="btn btn-outline" onclick="showScreen('setup')">← Back</button>
+  </div>
+</div>
+
+<!-- ── SCREEN: Results ── -->
+<div class="screen" id="screen-results">
+  <div id="results-content"></div>
+  <div style="margin:0 12px;display:flex;gap:8px">
+    <button class="btn btn-gold" onclick="newScan()" style="margin-top:0">New Scan</button>
+    <button class="btn btn-outline" onclick="showScreen('verify')" style="margin-top:0">Edit Scores</button>
+  </div>
+  <div style="text-align:center;padding:10px 0 4px;color:var(--inkl);font-size:10px">Derrick Game Verifier · v1.0</div>
+</div>
+
+<script>
+/* ── Course data ───────────────────────────────────────────────────────── */
+const PAR = [4,3,4,4,3,5,4,3,4, 4,4,4,4,3,4,4,4,5];
+const SI  = [6,18,4,12,16,2,10,14,8, 9,1,15,7,17,3,11,13,5];
+
+/* ── Sample from IMG_0055 ──────────────────────────────────────────────── */
+const SAMPLE = [
+  {name:'Greg',  idx:4,  scores:[4,5,5,4,3,7,4,3,5, 4,6,4,6,5,4,3,6,3], flagged:Array(18).fill(false)},
+  {name:'Bruce', idx:9,  scores:[4,3,4,4,5,6,5,3,5, 4,6,4,3,5,4,4,5,2], flagged:Array(18).fill(false)},
+  {name:'Al',    idx:5,  scores:[6,4,4,4,4,5,5,2,5, 6,6,4,2,5,4,6,6,4], flagged:Array(18).fill(false)},
+  {name:'Stu',   idx:15, scores:[6,4,4,4,4,4,5,2,5, 6,6,4,4,5,4,4,5,6], flagged:[false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false]},
+];
+
+/* ── State ─────────────────────────────────────────────────────────────── */
+let gameType = '1v1';
+let bet = 2;
+let photoDataUrl = null;
+let players = [];
+
+/* ── Setup screen ──────────────────────────────────────────────────────── */
+const BET_OPTS    = [1,2,5,10,20];
+const SIXPT_OPTS  = [0.25,0.5,1,2,5];
+
+function selGameType(t) {
+  gameType = t;
+  ['1v1','2v2','6pt'].forEach(g => document.getElementById('gt-'+g).classList.toggle('sel', g===t));
+  document.getElementById('bet-label').textContent =
+    t === '6pt' ? '¢/$ per point' : '$ per side (Front 9 / Back 9 / Full 18)';
+  bet = t === '6pt' ? 1 : 2;
+  renderBetRow();
+}
+
+function renderBetRow() {
+  const opts = gameType === '6pt' ? SIXPT_OPTS : BET_OPTS;
+  document.getElementById('bet-row').innerHTML = opts.map(v => {
+    const lbl = gameType === '6pt' ? (v < 1 ? (v*100)+'¢' : '$'+v) : '$'+v;
+    return `<div class="bet-opt${bet===v?' sel':''}" onclick="selBet(${v})">${lbl}</div>`;
+  }).join('');
+}
+
+function selBet(v) {
+  bet = v;
+  document.getElementById('bet-custom').value = '';
+  renderBetRow();
+}
+
+function handlePhoto(e) {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    photoDataUrl = ev.target.result;
+    const prev = document.getElementById('photo-preview');
+    prev.src = photoDataUrl; prev.style.display = 'block';
+    const drop = document.getElementById('photo-drop');
+    drop.classList.add('has-photo');
+    drop.querySelector('div').style.display = 'none';
+    document.getElementById('analyse-btn').disabled = false;
+    document.getElementById('setup-err').textContent = '';
+  };
+  r.readAsDataURL(f);
+}
+
+/* ── API key persistence ──────────────────────────────────────────────── */
+window.addEventListener('load', () => {
+  selGameType('1v1');
+  renderBetRow();
+  const saved = localStorage.getItem('dgv_api_key');
+  if (saved) document.getElementById('api-key').value = saved;
+});
+
+function getApiKey() {
+  const k = document.getElementById('api-key').value.trim();
+  if (k) localStorage.setItem('dgv_api_key', k);
+  return k;
+}
+
+/* ── Claude API call ──────────────────────────────────────────────────── */
+async function analyseCard() {
+  const apiKey = getApiKey();
+  if (!apiKey) { document.getElementById('setup-err').textContent = 'Enter your Anthropic API key above.'; return; }
+  if (!photoDataUrl) { document.getElementById('setup-err').textContent = 'Select a photo first.'; return; }
+
+  const nPlayers = gameType==='1v1'?2 : gameType==='2v2'?4 : 3;
+  const effBet = parseFloat(document.getElementById('bet-custom').value) || bet;
+
+  document.getElementById('overlay').classList.add('active');
+  document.getElementById('setup-err').textContent = '';
+
+  try {
+    const base64    = photoDataUrl.split(',')[1];
+    const mediaType = photoDataUrl.split(';')[0].split(':')[1];
+
+    const prompt = `You are reading a completed Derrick Golf & Winter Club scorecard from Edmonton, Alberta.
+
+IGNORE all printed columns: DECK 1/2/3/4 yardage columns (3-digit numbers like 329, 410 etc), Men's HCP column (MEHNCSP), Ladies HCP column (LADIHECSP), both PAR columns, DECK combo columns on the right side, and the OUT/IN/TOT subtotal rows.
+
+READ ONLY: The ${nPlayers} narrow blank columns in the centre of the card where players have handwritten their gross scores.
+- Player NAMES are written at the very top of these columns, often diagonally or vertically (e.g. GREG, BRUCE, AL, STU)
+- Each column has 18 handwritten gross scores, one per hole row
+- The HANDICAP row at the very bottom contains each player's handicap index (e.g. 4, 9, 5, 15)
+
+Derrick GWC pars holes 1-18: ${PAR.join(',')}
+
+Return ONLY this JSON — no markdown, no explanation:
+{"confidence":"high","players":[{"name":"GREG","idx":4,"scores":[4,5,5,4,3,7,4,3,5,4,6,4,6,5,4,3,6,3],"flagged":[false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false]}]}
+
+Rules:
+- Exactly ${nPlayers} players in left-to-right order
+- scores must have exactly 18 values; use null if a cell is illegible
+- flagged[h]=true if you are uncertain about that score
+- confidence: "high"=clear, "med"=some uncertain, "low"=best effort`;
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 2000,
+        messages: [{ role:'user', content:[
+          { type:'image', source:{ type:'base64', media_type:mediaType, data:base64 }},
+          { type:'text', text:prompt }
+        ]}]
+      })
+    });
+
+    if (!resp.ok) { const e = await resp.json(); throw new Error(e.error?.message || 'API error ' + resp.status); }
+    const data = await resp.json();
+    const txt  = (data.content.find(c => c.type==='text')?.text || '').replace(/```json?|```/g,'').trim();
+    const parsed = JSON.parse(txt);
+
+    players = parsed.players.map(p => ({
+      ...p,
+      scores:  Array.isArray(p.scores)  && p.scores.length  === 18 ? p.scores  : Array(18).fill(null),
+      flagged: Array.isArray(p.flagged) && p.flagged.length === 18 ? p.flagged : Array(18).fill(false),
+    }));
+    buildVerifyScreen(parsed.confidence || 'med');
+    showScreen('verify');
+
+  } catch(e) {
+    document.getElementById('setup-err').textContent = 'Scan failed: ' + String(e.message).slice(0,120) + '. Try Load Sample or Enter Manually.';
+  } finally {
+    document.getElementById('overlay').classList.remove('active');
+  }
+}
+
+function enterManually() {
+  const n = gameType==='1v1'?2 : gameType==='2v2'?4 : 3;
+  players = Array.from({length:n}, (_,i) => ({name:`Player ${i+1}`, idx:0, scores:Array(18).fill(null), flagged:Array(18).fill(false)}));
+  buildVerifyScreen('manual');
+  showScreen('verify');
+}
+
+function loadSample() {
+  gameType = '2v2'; bet = 2;
+  selGameType('2v2'); selBet(2);
+  players = SAMPLE.map(p => ({...p, scores:[...p.scores], flagged:[...p.flagged]}));
+  buildVerifyScreen('high');
+  showScreen('verify');
+}
+
+/* ── Verify screen ─────────────────────────────────────────────────────── */
+function buildVerifyScreen(confidence) {
+  // Player name/handicap rows
+  const confMsg = {high:'AI confidence is high — scores look correct.', med:'Some scores were uncertain (yellow). Please review.', low:'Low confidence — verify all scores carefully.', manual:'Enter player names, handicap indexes, and all 18 scores.'};
+  document.getElementById('verify-info').innerHTML =
+    (confMsg[confidence]||'') + ' Edit any field by tapping it. ' +
+    '<span style="background:#fffde7;padding:1px 5px;border-radius:3px;font-weight:700;color:#B8860B">Yellow</span> = uncertain. ' +
+    '<span style="background:#fff5f5;padding:1px 5px;border-radius:3px;font-weight:700;color:#e74c3c">Red</span> = missing.';
+
+  const teamNote = gameType==='2v2' ? '<div style="font-size:11px;font-weight:700;color:var(--gd);padding:6px 8px;background:var(--gp);border-radius:8px;margin-bottom:10px">👥 Players 1 &amp; 2 = Team A · Players 3 &amp; 4 = Team B</div>' : '';
+  let rows = teamNote;
+  players.forEach((p,pi) => {
+    const teamLbl = gameType==='2v2' ? `<span style="color:var(--inkl)">${pi<2?'Team A ·':'Team B ·'} </span>` : '';
+    rows += `<div class="player-row">
+      <div style="flex:1">
+        <div class="plbl">${teamLbl}Player ${pi+1}</div>
+        <input class="pinput" id="pname-${pi}" value="${escH(p.name)}" placeholder="Name">
+      </div>
+      <div>
+        <div class="plbl">Hdcp Idx</div>
+        <input class="hidx" type="number" id="pidx-${pi}" value="${p.idx}" min="0" max="54" step="0.1">
+      </div>
+    </div>`;
+  });
+  document.getElementById('player-rows').innerHTML = rows;
+
+  // Score table
+  let tbl = `<thead><tr>
+    <th style="width:26px">H</th>
+    <th style="width:26px">Par</th>
+    ${players.map((_,pi) => `<th>${escH(players[pi].name.split(' ')[0])}</th>`).join('')}
+  </tr></thead><tbody>`;
+
+  for (let row = 0; row <= 20; row++) {
+    if (row === 9 || row === 19) {
+      const lbl = row===9?'OUT':'IN', sl = row===9?[0,9]:[9,18];
+      tbl += `<tr class="sub"><td colspan="2">${lbl}</td>`;
+      players.forEach((_,pi) => {
+        const sc = players[pi].scores.slice(sl[0],sl[1]).filter(s=>s!==null);
+        tbl += `<td>${sc.length===9?sc.reduce((a,b)=>a+b,0):'·'}</td>`;
+      });
+      tbl += '</tr>';
+    } else if (row === 20) {
+      tbl += `<tr class="tot"><td colspan="2">TOT</td>`;
+      players.forEach((_,pi) => {
+        const all = players[pi].scores.filter(s=>s!==null);
+        tbl += `<td>${all.length===18?all.reduce((a,b)=>a+b,0):'·'}</td>`;
+      });
+      tbl += '</tr>';
+    } else {
+      const h = row < 9 ? row : row - 1;
+      tbl += `<tr style="background:${h%2===0?'#fff':'#fafaf8'}">
+        <td style="font-weight:600">${h+1}</td>
+        <td style="color:var(--inkl)">${PAR[h]}</td>`;
+      players.forEach((p,pi) => {
+        const v = p.scores[h], fl = p.flagged[h];
+        const cls = v===null?'missing':fl?'flagged':'';
+        tbl += `<td><input class="score-input ${cls}" id="s-${pi}-${h}" type="number" min="1" max="15" value="${v!==null?v:''}" placeholder="·" oninput="onScoreInput(${pi},${h},this.value)"></td>`;
+      });
+      tbl += '</tr>';
+    }
+  }
+  tbl += '</tbody>';
+  document.getElementById('score-table').innerHTML = tbl;
+}
+
+function onScoreInput(pi, h, val) {
+  players[pi].scores[h] = val===''?null:parseInt(val,10);
+  players[pi].flagged[h] = false;
+  // Refresh subtotals
+  refreshTotals();
+}
+
+function refreshTotals() {
+  players.forEach((_,pi) => {
+    // Read current values back
+    for (let h=0;h<18;h++) {
+      const el = document.getElementById(`s-${pi}-${h}`);
+      if (el) players[pi].scores[h] = el.value===''?null:parseInt(el.value,10);
+    }
+  });
+  // Rebuild just the OUT/IN/TOT cells would be complex — rebuild table header subtotals
+  // Simpler: just leave them to update on next full rebuild
+}
+
+function readPlayersFromScreen() {
+  players.forEach((p,pi) => {
+    const nm = document.getElementById(`pname-${pi}`);
+    const ix = document.getElementById(`pidx-${pi}`);
+    if (nm) p.name = nm.value.trim() || p.name;
+    if (ix) p.idx  = parseFloat(ix.value) || 0;
+    for (let h=0;h<18;h++) {
+      const el = document.getElementById(`s-${pi}-${h}`);
+      if (el) p.scores[h] = el.value===''?null:parseInt(el.value,10);
+    }
+  });
+}
+
+/* ── Calculate ─────────────────────────────────────────────────────────── */
+function calculate() {
+  readPlayersFromScreen();
+  const bad = [];
+  players.forEach((p,pi) => p.scores.forEach((s,h) => {
+    if (s===null||s<1||s>15) bad.push(`${p.name} H${h+1}`);
+  }));
+  if (bad.length) {
+    document.getElementById('verify-err').textContent = 'Fix scores: ' + bad.slice(0,4).join(', ') + (bad.length>4?` +${bad.length-4} more`:'');
+    return;
+  }
+  document.getElementById('verify-err').textContent = '';
+  const effBet = parseFloat(document.getElementById('bet-custom')?.value) || bet;
+
+  let html = '';
+  if (gameType === '6pt') {
+    const res = calcSixPoint(players, [0,1,2], effBet);
+    html = render6pt(res, players, effBet);
+  } else {
+    const matchup = gameType==='1v1'
+      ? {type:'1v1', sideA:[0], sideB:[1], bet:effBet, labelA:players[0].name, labelB:players[1].name}
+      : {type:'2v2', sideA:[0,1], sideB:[2,3], bet:effBet, labelA:`${players[0].name} & ${players[1].name}`, labelB:`${players[2].name} & ${players[3].name}`};
+    const res = calcNassau(players, matchup);
+    html = renderNassau(res, players, matchup, effBet);
+  }
+  document.getElementById('results-content').innerHTML = html;
+  showScreen('results');
+}
+
+/* ── Nassau engine ─────────────────────────────────────────────────────── */
+function matchHdcps(idxs) {
+  const vals = idxs.map(i => players[i].idx);
+  const mn = Math.min(...vals);
+  return idxs.map(i => Math.round(players[i].idx - mn));
+}
+function netS(pi, h, ph) {
+  const g = players[pi].scores[h]; if (g===null) return null;
+  const stk = ph>=SI[h]+18?2:ph>=SI[h]?1:0;
+  return g - stk;
+}
+function holeWin(matchup, h) {
+  const all = [...matchup.sideA,...matchup.sideB];
+  if (all.some(i=>players[i].scores[h]===null)) return null;
+  const allPh = matchHdcps(all);
+  const phA = allPh.slice(0,matchup.sideA.length);
+  const phB = allPh.slice(matchup.sideA.length);
+  if (matchup.type==='2v2') {
+    const nA = matchup.sideA.map((pi,ii)=>netS(pi,h,phA[ii]));
+    const nB = matchup.sideB.map((pi,ii)=>netS(pi,h,phB[ii]));
+    const lo = Math.min(...nA)<Math.min(...nB)?1:Math.min(...nB)<Math.min(...nA)?-1:0;
+    const hi = Math.max(...nA)<Math.max(...nB)?1:Math.max(...nB)<Math.max(...nA)?-1:0;
+    return lo+hi;
+  }
+  const ph2 = matchHdcps([matchup.sideA[0],matchup.sideB[0]]);
+  const a=netS(matchup.sideA[0],h,ph2[0]), b=netS(matchup.sideB[0],h,ph2[1]);
+  if (a===null||b===null) return null;
+  return a<b?1:b<a?-1:0;
+}
+function calcNassau(plrs, matchup) {
+  const savedPlayers = players;
+  players = plrs; // point engine at our player array
+  const base=matchup.bet, pv=base*2, games=[];
+  function sr(s,e){
+    let sc=0,ph=null,played=0;
+    for(let h=s;h<=e;h++){const r=holeWin(matchup,h);if(r===null)break;sc+=r;played++;if(ph===null&&Math.abs(sc)>=2&&h<e)ph=h;}
+    const left=(e-s+1)-played,settled=left===0||Math.abs(sc)>left;
+    return{sc,ph,settled,win:settled?(sc>0?'A':sc<0?'B':'tie'):null};
+  }
+  function addG(s,e,val,label,fl){
+    if(fl){
+      const l9=sr(s,8),l18=sr(s,e);
+      const p9=l9.settled?(l9.sc>0?base:l9.sc<0?-base:0):0;
+      const p18=l18.settled?(l18.sc>0?base:l18.sc<0?-base:0):0;
+      const cPay=p9+p18;
+      games.push({label,val:pv,sc:l18.sc,settled:l18.settled,win:cPay>0?'A':cPay<0?'B':(l18.settled?'tie':null),isFront:true,l9,l18,cPay});
+      return l18.ph;
+    }
+    const g=sr(s,e);
+    games.push({label,val,sc:g.sc,settled:g.settled,win:g.win,isFront:false});
+    return g.ph;
+  }
+  addG(0,8,base,'Front 9',false);
+  addG(9,17,base,'Back 9',false);
+  addG(0,17,base,'Full 18',false);
+  let ph=sr(0,17).ph,pn=1;
+  while(ph!==null){const ps=ph+1;if(ps>17)break;ph=ph<8?addG(ps,17,pv,`Press ${pn} H${ps+1}–18`,true):addG(ps,17,pv,`Press ${pn} H${ps+1}–18`,false);pn++;}
+  const money=plrs.map(()=>0);
+  games.forEach(g=>{
+    if(!g.settled||g.win==='tie')return;
+    const amt=g.isFront?Math.abs(g.cPay||0):g.val;
+    const wi=g.win==='A'?matchup.sideA:matchup.sideB, li=g.win==='A'?matchup.sideB:matchup.sideA;
+    wi.forEach(i=>money[i]+=amt); li.forEach(i=>money[i]-=amt);
+  });
+  players = savedPlayers;
+  return{games,money};
+}
+function calcSixPoint(plrs, idxs, perPoint) {
+  const minH=Math.min(...idxs.map(i=>plrs[i].idx));
+  const phs=idxs.map(i=>Math.round(plrs[i].idx-minH));
+  const stk=phs.map(ph=>SI.map(si=>ph>=si+18?2:ph>=si?1:0));
+  let cum=[0,0,0];const rows=[];
+  for(let h=0;h<18;h++){
+    const gs=idxs.map(i=>plrs[i].scores[h]);
+    if(gs.some(g=>g===null)){rows.push(null);continue;}
+    const nets=gs.map((g,ii)=>g-stk[ii][h]);
+    const mn=Math.min(...nets),cnt=nets.filter(n=>n===mn).length;
+    const pts=cnt===3?[2,2,2]:cnt===2?nets.map(n=>n===mn?3:0):nets.map(n=>n===mn?6:0);
+    cum=[cum[0]+pts[0],cum[1]+pts[1],cum[2]+pts[2]];rows.push(pts);
+  }
+  const totals=[...cum];
+  const ranked=idxs.map((pi,ii)=>({pi,pts:totals[ii]})).sort((a,b)=>b.pts-a.pts);
+  const money=idxs.map(()=>0),iOf=pi=>idxs.indexOf(pi);
+  for(let i=0;i<3;i++)for(let j=i+1;j<3;j++){const d=(ranked[i].pts-ranked[j].pts)*perPoint;if(d>0){money[iOf(ranked[i].pi)]+=d;money[iOf(ranked[j].pi)]-=d;}}
+  return{rows,totals,ranked,money};
+}
+
+/* ── Result renderers ──────────────────────────────────────────────────── */
+function fmt(v){return v===0?'$0':v>0?`+$${v}`:`-$${Math.abs(v)}`;}
+function amtCol(v){return v>0?'pos':v<0?'neg':'zero';}
+
+function renderNassau(res, plrs, matchup, b) {
+  const{games,money}=res;
+  const netA=matchup.sideA.reduce((s,i)=>s+money[i],0);
+  const winner=netA>0?matchup.labelA:netA<0?matchup.labelB:null;
+  let rows='';
+  games.forEach((g,i)=>{
+    let scS,wS,aS,wC;
+    if(g.isFront){
+      const c=g.cPay||0;
+      scS=`${g.l9.sc>=0?'+':''}${g.l9.sc}/${g.l18.sc>=0?'+':''}${g.l18.sc}`;
+      wS=c>0?matchup.labelA.split(' ')[0]:c<0?matchup.labelB.split(' ')[0]:'Tie';
+      aS=c?'$'+Math.abs(c):'$0'; wC=c>0?'var(--gm)':c<0?'var(--red)':'var(--inkl)';
+    } else {
+      scS=(g.sc>0?'+':'')+g.sc;
+      wS=g.settled?(g.win==='A'?matchup.labelA.split(' ')[0]:g.win==='B'?matchup.labelB.split(' ')[0]:'Tie'):'—';
+      aS=g.settled&&g.win!=='tie'?'$'+g.val:'$0';
+      wC=g.win==='A'?'var(--gm)':g.win==='B'?'var(--red)':'var(--inkl)';
+    }
+    rows+=`<tr style="background:${i%2?'#fafaf8':'#fff'}">
+      <td style="padding:4px 6px;font-weight:600;font-size:10px">${g.label}</td>
+      <td>${scS}</td>
+      <td style="font-weight:700;color:${wC};font-size:10px">${wS}</td>
+      <td style="font-weight:700">${aS}</td>
+    </tr>`;
+  });
+
+  let playerRows = '';
+  if(matchup.type==='2v2'){
+    plrs.forEach((p,pi)=>{
+      const v=money[pi];
+      playerRows+=`<div class="result-row"><div class="result-name">${escH(p.name)}</div><div class="result-amt ${amtCol(v)}">${fmt(v)}</div></div>`;
+    });
+  }
+
+  return `<div class="card">
+    <div class="result-hdr">
+      <div style="font-size:13px;font-weight:700;color:var(--gold)">${matchup.type==='2v2'?'2v2 High-Low Nassau':'1v1 Nassau'} — $${b}/side</div>
+      <div style="font-size:11px;opacity:.7;margin-top:3px">${escH(matchup.labelA)} vs ${escH(matchup.labelB)}</div>
+    </div>
+    <div style="overflow-x:auto;margin-bottom:12px">
+      <table class="match-table">
+        <thead><tr>${['Game','Score','Winner','$'].map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div class="final-banner">
+      <div style="font-size:11px;opacity:.7;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Match Result</div>
+      ${winner
+        ? `<div style="font-size:18px;font-weight:800;color:var(--gold)">${escH(winner)} wins</div><div style="font-size:28px;font-weight:800">$${Math.abs(netA)}</div>`
+        : `<div style="font-size:22px;font-weight:800">All Square</div>`}
+    </div>
+    ${playerRows}
+  </div>`;
+}
+
+function render6pt(res, plrs, b) {
+  const{rows,totals,ranked,money}=res;
+  const medals=['🥇','🥈','🥉'];
+  const idxs=[0,1,2];
+  let rankRows='';
+  ranked.forEach((r,rk)=>{
+    const m=money[idxs.indexOf(r.pi)];
+    rankRows+=`<div class="result-row">
+      <div><div style="font-size:10px;color:var(--inkl)">${medals[rk]} ${r.pts} pts</div><div class="result-name">${escH(plrs[r.pi].name)}</div></div>
+      <div class="result-amt ${amtCol(m)}">${fmt(m)}</div>
+    </div>`;
+  });
+  let holeRows='';
+  rows.forEach((pts,h)=>{
+    if(!pts)return;
+    const mx=Math.max(...pts);
+    holeRows+=`<tr style="background:${h%2?'#fafaf8':'#fff'}"><td style="text-align:center;font-weight:600;padding:3px 6px">${h+1}</td>`;
+    pts.forEach((pt,ii)=>{
+      const c=pt===mx?'var(--gm)':pt===0?'var(--red)':'inherit';
+      holeRows+=`<td style="text-align:center;padding:3px 10px;font-weight:${pt===mx?800:400};color:${c}">${pt}</td>`;
+    });
+    holeRows+='</tr>';
+  });
+  return `<div class="card">
+    <div class="result-hdr">
+      <div style="font-size:13px;font-weight:700;color:var(--gold)">6️⃣ 6-Point Game — ${b<1?(b*100)+'¢':'$'+b}/point</div>
+      <div style="font-size:11px;opacity:.7;margin-top:3px">${plrs.map(p=>escH(p.name)).join(' · ')}</div>
+    </div>
+    ${rankRows}
+  </div>
+  <div class="card">
+    <div class="ctitle">Hole-by-Hole Points</div>
+    <div style="overflow-x:auto">
+      <table style="border-collapse:collapse;font-size:11px">
+        <thead><tr>
+          <th style="background:var(--gp);color:var(--gd);padding:4px 6px;font-weight:700">H</th>
+          ${idxs.map(pi=>`<th style="background:var(--gp);color:var(--gd);padding:4px 10px;font-weight:700">${escH(plrs[pi].name.split(' ')[0])}</th>`).join('')}
+        </tr></thead>
+        <tbody>${holeRows}
+          <tr style="background:var(--gp);font-weight:800">
+            <td style="text-align:center;padding:4px 6px">TOT</td>
+            ${totals.map(t=>`<td style="text-align:center;padding:4px 10px">${t}</td>`).join('')}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+/* ── Navigation ────────────────────────────────────────────────────────── */
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function newScan() {
+  showScreen('setup');
+  players=[];photoDataUrl=null;
+  document.getElementById('photo-preview').style.display='none';
+  document.getElementById('photo-drop').classList.remove('has-photo');
+  document.getElementById('analyse-btn').disabled=true;
+  document.getElementById('setup-err').textContent='';
+}
+
+function escH(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// Register service worker
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
+}
+</script>
+</body>
+</html>
